@@ -10,4 +10,14 @@ plugins:
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: secret-manager-opr
 repo: github.com/Sayed-Imran/secret-manager-opr
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: secrets.mgr
+  group: api
+  kind: SecretManager
+  path: github.com/Sayed-Imran/secret-manager-opr/api/v1alpha1
+  version: v1alpha1
 version: "3"
