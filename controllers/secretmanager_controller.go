@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -49,7 +50,19 @@ type SecretManagerReconciler struct {
 func (r *SecretManagerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	secretManager := &apiv1alpha1.SecretManager{}
+	err := r.Get(ctx, req.NamespacedName, secretManager)
+	if err != nil {
+		log.Log.Error(err, "unable to fetch SecretManager")
+		return ctrl.Result{}, err
+	}
+	allNamespaces := v1.NamespaceList{}
+	err = r.List(ctx, &allNamespaces)
+	if err != nil {
+		log.Log.Error(err, "unable to fetch all namespaces")
+		return ctrl.Result{}, err
+	}
+
 
 	return ctrl.Result{}, nil
 }
@@ -59,4 +72,25 @@ func (r *SecretManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&apiv1alpha1.SecretManager{}).
 		Complete(r)
+}
+
+func getMatchedNamespaces(matchNamespaces []string, avoidNamespaces []string, ctx context.Context) []string {
+	var matchedNamespaces []string
+	allNamespaces := v1.NamespaceList{}
+	err := r.List(ctx, &allNamespaces)
+	if err != nil {
+		log.Log.Error(err, "unable to fetch all namespaces")
+		return matchedNamespaces
+	}
+	for _, namespace := range allNamespaces.Items {
+		if len(matchNamespaces) > 0 {
+			for _, namespace := range matchNamespaces {
+				// implement regex check
+
+			}
+		} else {
+			matchedNamespaces = append(matchedNamespaces, namespace.Name)
+		}
+	}
+	return matchedNamespaces
 }
