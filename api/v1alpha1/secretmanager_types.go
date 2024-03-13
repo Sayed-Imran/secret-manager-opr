@@ -38,6 +38,7 @@ type SecretManagerSpec struct {
 type SecretManagerStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Namespaces []string `json:"namespaces,omitempty"`
 }
 
 //+kubebuilder:object:root=true
