@@ -28,8 +28,10 @@ type SecretManagerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of SecretManager. Edit secretmanager_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Type           string            `json:"type"`
+	MatchNamespace string            `json:"matchNamespace"`
+	AvoidNamespace string            `json:"avoidNamespace"`
+	Data           map[string]string `json:"data"`
 }
 
 // SecretManagerStatus defines the observed state of SecretManager
