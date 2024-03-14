@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"regexp"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -63,7 +64,6 @@ func (r *SecretManagerReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
-
 	return ctrl.Result{}, nil
 }
 
@@ -74,7 +74,7 @@ func (r *SecretManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func getMatchedNamespaces(matchNamespaces []string, avoidNamespaces []string, ctx context.Context) []string {
+func getMatchedNamespaces(r *SecretManagerReconciler, matchNamespaces []string, avoidNamespaces []string, ctx context.Context) []string {
 	var matchedNamespaces []string
 	allNamespaces := v1.NamespaceList{}
 	err := r.List(ctx, &allNamespaces)
@@ -82,15 +82,35 @@ func getMatchedNamespaces(matchNamespaces []string, avoidNamespaces []string, ct
 		log.Log.Error(err, "unable to fetch all namespaces")
 		return matchedNamespaces
 	}
-	for _, namespace := range allNamespaces.Items {
-		if len(matchNamespaces) > 0 {
-			for _, namespace := range matchNamespaces {
-				// implement regex check
-
+	for _, namespace := range matchNamespaces {
+		for _, ns := range allNamespaces.Items {
+			matched, err := regexp.MatchString(namespace, ns.Name)
+			if err != nil {
+				log.Log.Error(err, "unable to match namespace")
+				continue
 			}
-		} else {
-			matchedNamespaces = append(matchedNamespaces, namespace.Name)
+			if matched {
+				matchedNamespaces = append(matchedNamespaces, ns.Name)
+			}
 		}
 	}
-	return matchedNamespaces
+	var finalNamespaces []string
+	for _, ns := range matchedNamespaces {
+		avoid := false
+		for _, namespace := range avoidNamespaces {
+			matched, err := regexp.MatchString(namespace, ns)
+			if err != nil {
+				log.Log.Error(err, "unable to match namespace")
+				continue
+			}
+			if matched {
+				avoid = true
+				break
+			}
+		}
+		if !avoid {
+			finalNamespaces = append(finalNamespaces, ns)
+		}
+	}
+	return finalNamespaces
 }
