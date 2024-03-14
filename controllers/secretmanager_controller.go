@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"regexp"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -58,15 +59,26 @@ func (r *SecretManagerReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		log.Log.Error(err, "unable to fetch SecretManager")
 		return ctrl.Result{}, err
 	}
-	allNamespaces := v1.NamespaceList{}
-	err = r.List(ctx, &allNamespaces)
-	if err != nil {
-		log.Log.Error(err, "unable to fetch all namespaces")
-		return ctrl.Result{}, err
+	matchNamespaces := getMatchedNamespaces(r, secretManager.Spec.MatchNamespaces, secretManager.Spec.AvoidNamespaces, ctx)
+	for _, namespace := range matchNamespaces {
+		err := createSecrets(r, secretManager.Spec.Data, namespace, secretManager.Name, ctx)
+		if err != nil {
+			log.Log.Error(err, "unable to create secret")
+			return ctrl.Result{}, err
+		}
+
 	}
 
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: time.Duration(10 * time.Second)}, nil
 }
+
+// func convertDataToBytes(data map[string]string) map[string][]byte {
+// 	convertedData := make(map[string][]byte)
+// 	for key, value := range data {
+// 		convertedData[key] = []byte(value)
+// 	}
+// 	return convertedData
+// }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SecretManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -115,7 +127,6 @@ func getMatchedNamespaces(r *SecretManagerReconciler, matchNamespaces []string, 
 	}
 	return finalNamespaces
 }
-
 
 func createSecrets(conciler *SecretManagerReconciler, data map[string][]byte, namespace string, secretName string, ctx context.Context) error {
 	secret := &v1.Secret{

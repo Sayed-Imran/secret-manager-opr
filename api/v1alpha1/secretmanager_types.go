@@ -28,9 +28,9 @@ type SecretManagerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Type            string          `json:"type"`
-	MatchNamespaces []string        `json:"matchNamespace"`
-	AvoidNamespaces []string        `json:"avoidNamespace"`
+	Type            string            `json:"type"`
+	MatchNamespaces []string          `json:"matchNamespace"`
+	AvoidNamespaces []string          `json:"avoidNamespace"`
 	Data            map[string][]byte `json:"data"`
 }
 
