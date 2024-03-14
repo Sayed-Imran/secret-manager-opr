@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	apiv1alpha1 "github.com/Sayed-Imran/secret-manager-opr/api/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // SecretManagerReconciler reconciles a SecretManager object
@@ -113,4 +114,25 @@ func getMatchedNamespaces(r *SecretManagerReconciler, matchNamespaces []string, 
 		}
 	}
 	return finalNamespaces
+}
+
+
+func createSecrets(conciler *SecretManagerReconciler, data map[string][]byte, namespace string, secretName string, ctx context.Context) error {
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: namespace},
+		Data:       data,
+	}
+	// check if the secret already exists
+	err := conciler.Get(ctx, client.ObjectKey{Namespace: namespace, Name: secretName}, secret)
+	if err == nil {
+		// secret already exists
+		log.Log.Info("secret already exists")
+		return nil
+	}
+	err = conciler.Create(ctx, secret)
+	if err != nil {
+		log.Log.Error(err, "unable to create secret")
+		return err
+	}
+	return nil
 }
