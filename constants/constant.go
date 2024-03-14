@@ -2,7 +2,6 @@ package constants
 
 import v1 "k8s.io/api/core/v1"
 
-
 var SecretTypes = map[string]v1.SecretType{
 	"generic":         v1.SecretTypeOpaque,
 	"docker":          v1.SecretTypeDockerConfigJson,

@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	apiv1alpha1 "github.com/Sayed-Imran/secret-manager-opr/api/v1alpha1"
+	"github.com/Sayed-Imran/secret-manager-opr/constants"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -56,12 +57,13 @@ func (r *SecretManagerReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	secretManager := &apiv1alpha1.SecretManager{}
 	err := r.Get(ctx, req.NamespacedName, secretManager)
 	if err != nil {
-		log.Log.Error(err, "unable to fetch SecretManager")
-		return ctrl.Result{}, err
+		if client.IgnoreNotFound(err) == nil {
+			return ctrl.Result{}, nil
+		}
 	}
 	matchNamespaces := getMatchedNamespaces(r, secretManager.Spec.MatchNamespaces, secretManager.Spec.AvoidNamespaces, ctx)
 	for _, namespace := range matchNamespaces {
-		err := createSecrets(r, secretManager.Spec.Data, namespace, secretManager.Name, ctx)
+		err := createSecrets(r, secretManager.Spec.Data, string(secretManager.Spec.Type), namespace, secretManager.Name, ctx)
 		if err != nil {
 			log.Log.Error(err, "unable to create secret")
 			return ctrl.Result{}, err
@@ -71,14 +73,6 @@ func (r *SecretManagerReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 	return ctrl.Result{RequeueAfter: time.Duration(10 * time.Second)}, nil
 }
-
-// func convertDataToBytes(data map[string]string) map[string][]byte {
-// 	convertedData := make(map[string][]byte)
-// 	for key, value := range data {
-// 		convertedData[key] = []byte(value)
-// 	}
-// 	return convertedData
-// }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SecretManagerReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -128,10 +122,12 @@ func getMatchedNamespaces(r *SecretManagerReconciler, matchNamespaces []string, 
 	return finalNamespaces
 }
 
-func createSecrets(conciler *SecretManagerReconciler, data map[string][]byte, namespace string, secretName string, ctx context.Context) error {
+func createSecrets(conciler *SecretManagerReconciler, data map[string][]byte, secretType string, namespace string, secretName string, ctx context.Context) error {
+
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: namespace},
 		Data:       data,
+		Type:       constants.SecretTypes[secretType],
 	}
 	// check if the secret already exists
 	err := conciler.Get(ctx, client.ObjectKey{Namespace: namespace, Name: secretName}, secret)
