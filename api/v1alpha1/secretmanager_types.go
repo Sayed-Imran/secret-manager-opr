@@ -29,8 +29,8 @@ type SecretManagerSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	Type            string            `json:"type"`
-	MatchNamespaces []string          `json:"matchNamespace"`
-	AvoidNamespaces []string          `json:"avoidNamespace"`
+	MatchNamespaces []string          `json:"matchNamespaces"`
+	AvoidNamespaces []string          `json:"avoidNamespaces"`
 	Data            map[string][]byte `json:"data"`
 }
 
