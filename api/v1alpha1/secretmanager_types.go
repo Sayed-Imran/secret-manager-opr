@@ -44,7 +44,8 @@ type SecretManagerStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// SecretManager is the Schema for the secretmanagers API
+// SecretManager is the Schema for the secretmanagers
+// +kubebuilder:resource:path=secretmanagers,shortName=smr
 type SecretManager struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
