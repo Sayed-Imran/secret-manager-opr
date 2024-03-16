@@ -70,6 +70,13 @@ func (r *SecretManagerReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 
 	}
+	// update the status of the secret manager
+	secretManager.Status.Namespaces = matchNamespaces
+	err = r.Status().Update(ctx, secretManager)
+	if err != nil {
+		log.Log.Error(err, "unable to update status")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{RequeueAfter: time.Duration(10 * time.Second)}, nil
 }
