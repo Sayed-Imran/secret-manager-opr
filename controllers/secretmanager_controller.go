@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 	"regexp"
 	"time"
 
@@ -131,22 +132,37 @@ func getMatchedNamespaces(r *SecretManagerReconciler, matchNamespaces []string, 
 
 func createSecrets(conciler *SecretManagerReconciler, data map[string][]byte, secretType string, namespace string, secretName string, ctx context.Context) error {
 
-	secret := &v1.Secret{
+	newSecret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{Name: secretName, Namespace: namespace},
 		Data:       data,
 		Type:       constants.SecretTypes[secretType],
 	}
-	// check if the secret already exists
-	err := conciler.Get(ctx, client.ObjectKey{Namespace: namespace, Name: secretName}, secret)
-	if err == nil {
-		// secret already exists
-		log.Log.Info("secret already exists")
+
+	// existingSecret will hold the current state of the secret from the cluster
+	existingSecret := &v1.Secret{}
+	err := conciler.Get(ctx, client.ObjectKey{Namespace: namespace, Name: secretName}, existingSecret)
+	if err != nil {
+		// If error occurs, it means the secret probably doesn't exist, so create it
+		err = conciler.Create(ctx, newSecret)
+		if err != nil {
+			log.Log.Error(err, "unable to create secret")
+			return err
+		}
 		return nil
 	}
-	err = conciler.Create(ctx, secret)
-	if err != nil {
-		log.Log.Error(err, "unable to create secret")
-		return err
+
+	// If secret exists, compare the data with the new secret data
+	if !reflect.DeepEqual(existingSecret.Data, newSecret.Data) {
+		// If data is not the same, update the secret
+		existingSecret.Data = newSecret.Data
+		err = conciler.Update(ctx, existingSecret)
+		if err != nil {
+			log.Log.Error(err, "unable to update secret")
+			return err
+		}
+	} else {
+		log.Log.Info("secret already exists and data is the same, no update needed")
 	}
+
 	return nil
 }
