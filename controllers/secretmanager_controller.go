@@ -138,11 +138,9 @@ func createSecrets(conciler *SecretManagerReconciler, data map[string][]byte, se
 		Type:       constants.SecretTypes[secretType],
 	}
 
-	// existingSecret will hold the current state of the secret from the cluster
 	existingSecret := &v1.Secret{}
 	err := conciler.Get(ctx, client.ObjectKey{Namespace: namespace, Name: secretName}, existingSecret)
 	if err != nil {
-		// If error occurs, it means the secret probably doesn't exist, so create it
 		err = conciler.Create(ctx, newSecret)
 		if err != nil {
 			log.Log.Error(err, "unable to create secret")
@@ -151,9 +149,8 @@ func createSecrets(conciler *SecretManagerReconciler, data map[string][]byte, se
 		return nil
 	}
 
-	// If secret exists, compare the data with the new secret data
 	if !reflect.DeepEqual(existingSecret.Data, newSecret.Data) {
-		// If data is not the same, update the secret
+
 		existingSecret.Data = newSecret.Data
 		err = conciler.Update(ctx, existingSecret)
 		if err != nil {
